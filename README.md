@@ -54,4 +54,5 @@ should work just the same.
 
 For much more information on how to use the cassette interface on the
 Altair 8800, see Mike's [documentation](http://altairclone.com/downloads/manuals/Cassette%20Interface%20Manual.pdf) 
-for his cassette interface.
+for his cassette interface. Obviously his documentation was written for the Altair Clone
+so following the instructions will be slightly different when used with an Altair Simulator.
