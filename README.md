@@ -22,6 +22,9 @@ Any data sent to the 88-ACR card by software running in the Simulator
 should now appear on the microphone input of the cassette recorder and
 data played back on the recorder should be visible on the 88-ACR card.
 
+You will likely need to adjust recording level and volume on the cassette
+recorder to find levels that work well.
+
 ## Hardware
 
 The modulator/demodulator hardware is based on an ATMega 328p MCU
@@ -35,4 +38,20 @@ development GUI. There are plenty of descriptions on how to upload
 Arduino sketches to a stand-alone ATMega available on the internet.
 Search for "Breadboard Arduino" or use [this link](http://www.buildcircuit.com/make-arduino-on-breadboard-using-ftdi-breakout-board).
 
+## Acknowledgements
 
+This project is loosely based on Mike Douglas' implementation
+of an [Audio Cassette Interface](http://altairclone.com/cassette.htm) 
+for the [Altair 8800 clone](http://altairclone.com/).
+
+Thanks to Mike for tracking down the original 88-ACR documentation,
+collecting supporting files and making the plans for his interface [available to the public](http://altairclone.com/downloads/cassette_interface/Hardware).
+
+Although the implementation is different, the function of the two should
+be almost identical. Instead of building this project here, purchasing
+one of Mike's interfaces and hooking it up to the Altair Simulator
+should work just the same.
+
+For much more information on how to use the cassette interface on the
+Altair 8800, see Mike's [documentation](http://altairclone.com/downloads/manuals/Cassette%20Interface%20Manual.pdf) 
+for his cassette interface.
