@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Modulator/Demodulator for 300 baud Altair cassette interface
+// Modulator/Demodulator for 88-ACR Altair Audio Cassette Interface (300 baud)
 // Copyright (C) 2018 David Hansel
 //
 // This program is free software; you can redistribute it and/or modify
@@ -26,8 +26,8 @@
 // timing values for audio output:
 // 8Mz main clock with /32 pre-scaler, the output toggles on 
 // timer compare match so the timer must count up twice for a full wave:
-#define OCRA_1850HZ  67 // 8000000/32/2/1850 = 67.57
-#define OCRA_2400HZ  52 // 8000000/32/2/2400 = 52.08
+#define OCRA_1850HZ  67 // 8000000/32/2/1850 = 67.57 = 541 microseconds
+#define OCRA_2400HZ  52 // 8000000/32/2/2400 = 52.08 = 417 microseconds
 
 // timing values for audio input
 #define PERIOD_MAX_US 2000  // 1000Hz = 2000 microseconds
@@ -68,19 +68,19 @@ void got_pulse(bool good)
       }
   }
  else if( bad_pulses<NUM_BAD_PULSES )
-    {
-      bad_pulses++;
-      if( bad_pulses==NUM_BAD_PULSES )
-        {
-          good_pulses = 0;    
-          if( send_data )
-          {
-            digitalWrite(PIN_LED, LOW); 
-            digitalWrite(PIN_SERIAL_OUT, HIGH);
-            send_data = false;
-          }
-        }
-    }
+   {
+     bad_pulses++;
+     if( bad_pulses==NUM_BAD_PULSES )
+       {
+         good_pulses = 0;    
+         if( send_data )
+           {
+             digitalWrite(PIN_LED, LOW); 
+             digitalWrite(PIN_SERIAL_OUT, HIGH);
+             send_data = false;
+           }
+       }
+   }
 }
 
 
@@ -145,13 +145,36 @@ ISR(TIMER1_CAPT_vect)
   unsigned int ticks = ICR1;
 
   if( ticks<PERIOD_MIN_US )
-    got_pulse(false); // short pulse => bad pulse
+    got_pulse(false); // too short pulse => bad pulse
   else 
     {
-      // detected good pulse - we can't get here with ticks>PERIOD_MAX_US
-      // because the COMPA interrupt would have been triggered before that
-      got_pulse(true);
-      if( send_data ) digitalWrite(PIN_SERIAL_OUT, ticks<PERIOD_MID_US);
+      // detected pulse with PERIOD_MIN_US <= ticks <= PERIOD_MAX_US
+      // (we can't get here with ticks>PERIOD_MAX_US
+      // because the COMPA interrupt would have been triggered before that)
+      static bool p1 = true, p2 = true;
+      bool p3 = ticks<PERIOD_MID_US;
+      
+      if( p1!=p2 && p2!=p3 )
+        {
+          // of the three most recent pulses, the middle one was different
+          // from the first and last => bad pulse (one bit is made up of 
+          // about six pulses so there should never be a short->long->short
+          // or long->short->long sequence)
+          got_pulse(false);
+          p2 = p3;
+        }
+      else
+        {
+          // previous pulse was good => send it.
+          // note that what is being sent out the serial interface is two
+          // pulses (or about 1/3 bit) behind the incoming audio: first the
+          // incoming audio pulse has to complete before the computer can see
+          // its length and then we stay one more pulse behind so we can
+          // detect single-pulse errors (see above).
+          got_pulse(true);
+          if( send_data ) digitalWrite(PIN_SERIAL_OUT, p2);
+          p1 = p2; p2 = p3;
+        }
     }
 }
 
@@ -223,4 +246,3 @@ void setup()
 
 void loop() 
 {/* nothing to do here */}
-
