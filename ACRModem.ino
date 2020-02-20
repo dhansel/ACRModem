@@ -65,6 +65,12 @@ void got_pulse(bool good)
             digitalWrite(PIN_LED, HIGH); 
             send_data = true; 
           }
+        else
+          {
+            // enable timer 1 overflow interrupt (checks for too-long pulse)
+            TIFR1  |= bit(OCF1A);
+            TIMSK1 |= bit(OCIE1A);
+          }
       }
   }
  else if( bad_pulses<NUM_BAD_PULSES )
@@ -79,6 +85,9 @@ void got_pulse(bool good)
              digitalWrite(PIN_SERIAL_OUT, HIGH);
              send_data = false;
            }
+
+         // disable timer 1 overflow interrupt (only needed while decoding)
+         TIMSK1 &= ~bit(OCIE1A);
        }
    }
 }
@@ -222,7 +231,7 @@ void setup()
   TCCR1B = bit(ICNC1) | bit(ICES1) | bit(CS11); // enable input capture noise canceler, select rising edge and prescaler 8
   TCCR1C = 0;  
   OCR1A  = PERIOD_MAX_US; // set up for output compare match A after PERIOD_MAX_US microseconds
-  TIMSK1 = bit(ICF1) | bit(OCIE1A); // enable interrupts on input capture and output compare match A
+  TIMSK1 = bit(ICF1); // enable interrupt on input capture
 
   // set up serial output
   pinMode(PIN_SERIAL_OUT, OUTPUT);
@@ -241,6 +250,11 @@ void setup()
   pinMode(1, OUTPUT);
   digitalWrite(1, HIGH);
   attachInterrupt(digitalPinToInterrupt(3), extern_serial_in_change, CHANGE);
+
+  // disable timer0 overflow interrupt (DISABLES MILLIS() FUNCTION!)
+  // necessary so we don't introduce timing errors when forwarding serial data
+  // due to timer1 interrupt handling in Arduino core
+  TIMSK0 &= ~bit(TOIE0);
 }
 
 
